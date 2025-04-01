@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prototype Workflow System - AI </title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h1, h2 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+        .chart-container {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 30px;
+            overflow: hidden; /* Important for panzoom */
+            position: relative; /* Needed for absolute positioned tooltips */
+            min-height: 400px; /* Ensure minimum height */
+        }
+        .chart-description {
+            margin-bottom: 15px;
+            font-size: 0.95em;
+            color: #555;
+        }
+        .mermaid {
+            text-align: center;
+            cursor: grab; /* Indicate panning is possible */
+        }
+        .mermaid svg {
+            max-width: 100%; /* Allow shrinking but rely on panzoom for expansion */
+            height: auto;
+        }
+
+        /* Tooltip Styling */
+        #tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            white-space: pre-wrap; /* Allow wrapping within tooltip */
+            max-width: 300px; /* Limit tooltip width */
+            display: none; /* Hidden by default */
+            z-index: 1000;
+            pointer-events: none; /* Tooltip shouldn't interfere with mouse */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* Class Definitions Styling (Optional - from your original code) */
+        .node.primary rect, .node.primary polygon, .node.primary circle, .node.primary ellipse { fill:#1565c0; stroke:#0d47a1; color:white; stroke-width: 1px; }
+        .node.secondary rect, .node.secondary polygon, .node.secondary circle, .node.secondary ellipse { fill:#f57c00; stroke:#ef6c00; color:white; stroke-width: 1px; }
+        .node.tertiary rect, .node.tertiary polygon, .node.tertiary circle, .node.tertiary ellipse { fill:#43a047; stroke:#2e7d32; color:white; stroke-width: 1px; }
+        .node.quaternary rect, .node.quaternary polygon, .node.quaternary circle, .node.quaternary ellipse { fill:#6a1b9a; stroke:#4a148c; color:white; stroke-width: 1px; }
+        .node.flow rect, .node.flow polygon, .node.flow circle, .node.flow ellipse { fill:#546e7a; stroke:#37474f; color:white; stroke-width: 1px; }
+        .node.admin rect, .node.admin polygon, .node.admin circle, .node.admin ellipse { fill:#2196f3; stroke:#1976d2; color:white; stroke-width: 1px; }
+        .node.user rect, .node.user polygon, .node.user circle, .node.user ellipse { fill:#4caf50; stroke:#388e3c; color:white; stroke-width: 1px; }
+        .node.sysadmin rect, .node.sysadmin polygon, .node.sysadmin circle, .node.sysadmin ellipse { fill:#ff9800; stroke:#f57c00; color:white; stroke-width: 1px; }
+        .node.process rect, .node.process polygon, .node.process circle, .node.process ellipse { fill:#9c27b0; stroke:#7b1fa2; color:white; stroke-width: 1px; }
+        .node.decision rect, .node.decision polygon, .node.decision circle, .node.decision ellipse { fill:#f44336; stroke:#d32f2f; color:white; stroke-width: 1px; }
+        .node.sources rect, .node.sources polygon, .node.sources circle, .node.sources ellipse { fill:#e1f5fe; stroke:#4fc3f7; color:#0277bd; stroke-width: 1px; }
+        .node.processing rect, .node.processing polygon, .node.processing circle, .node.processing ellipse { fill:#e8f5e9; stroke:#66bb6a; color:#2e7d32; stroke-width: 1px; }
+        .node.storage rect, .node.storage polygon, .node.storage circle, .node.storage ellipse { fill:#fff3e0; stroke:#ffb74d; color:#ef6c00; stroke-width: 1px; }
+        .node.analytics rect, .node.analytics polygon, .node.analytics circle, .node.analytics ellipse { fill:#f3e5f5; stroke:#ab47bc; color:#6a1b9a; stroke-width: 1px; }
+        .node.interface rect, .node.interface polygon, .node.interface circle, .node.interface ellipse { fill:#e8eaf6; stroke:#7986cb; color:#303f9f; stroke-width: 1px; }
+        .node.external rect, .node.external polygon, .node.external circle, .node.external ellipse { fill:#fafafa; stroke:#bdbdbd; color:#424242; stroke-width: 1px; }
+
+        /* Style labels within nodes for better contrast on dark backgrounds */
+        .node text {
+            fill: #333; /* Default text color */
+            stroke: none;
+            font-weight: bold;
+        }
+        /* Specific overrides for classes with dark fills */
+         .node.primary text, .node.secondary text, .node.tertiary text, .node.quaternary text, .node.flow text,
+         .node.admin text, .node.user text, .node.sysadmin text, .node.process text, .node.decision text {
+            fill: white; /* White text for dark nodes */
+        }
+        /* Specific overrides for classes with light fills */
+        .node.sources text, .node.processing text, .node.storage text, .node.analytics text, .node.interface text, .node.external text {
+           fill: #333; /* Dark text for light nodes */
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>Prototype Workflow System - COMPASS - Comprehensive Observational Multi-Platform Analytical Support System</h1>
+
+    <!-- Tooltip Element -->
+    <div id="tooltip"></div>
+
+    <!-- Chart 1: Architecture Flow -->
+    <div class="chart-container">
+        <h2>1. System Architecture Flow</h2>
+        <p class="chart-description">
+            This diagram illustrates the overall system architecture with distinct layers: Data Ingestion & Processing (handling different document types and real-time data), Data Storage (primary, vector, geospatial databases), Forecasting (predictive models), Retrieval & Intelligence (RAG system with LLM integration), Presentation (chat, map, and dashboard interfaces), Query Flow (how user questions get processed), and Deployment Options. It shows the technical backbone of the system.
+        </p>
+        <pre class="mermaid" id="mermaid-chart-1">
+flowchart TD
+    subgraph "Data Ingestion & Processing Layer"
+        A1[Upload Interface] --> A2{Document Type?}
+        A2 -->|PDF| A3[PDF Parser]
+        A2 -->|Image/Scan| A4[OCR Engine]
+        A2 -->|Excel/CSV| A5[Tabular Data Processor]
+        A2 -->|Word/Text| A6[Text Extractor]
+        A2 -->|Shapefile| A7[Geospatial Converter]
+
+        A3 & A4 & A5 & A6 & A7 --> A8[Data Normalization]
+        A8 --> A9[Validation & QA]
+
+        L1[Live IMD API] --> L2[API Connector]
+        L2 --> L3[Real-time Data Processor]
+        L3 --> A8
+
+        M1[Manual Input] --> A8
+    end
+
+    subgraph "Data Storage Layer"
+        A9 --> B1[(Primary Database)]
+        B1 <--> B2[(Vector Database)]
+        B1 --> B3[Data Versioning]
+        B3 --> B4[Historical Archives]
+    end
+
+    subgraph "Forecasting Layer"
+        B1 --> C1[Forecasting Models]
+        C1 --> C2[Prediction Generator]
+        C2 --> C3[Confidence Scoring]
+        C3 --> B1
+    end
+
+    subgraph "Retrieval & Intelligence Layer"
+        B1 & B2 --> D1[RAG System]
+        D1 --> D2[Context Assembly]
+        D2 --> D3[LLM Integration]
+        D3 --> D4[Response Generation]
+    end
+
+    subgraph "Presentation Layer"
+        D4 --> E1[Chat Interface]
+        D4 --> E2[Map Visualization]
+        D4 --> E3[Data Dashboard]
+
+        E1 <--> E2
+        E2 <--> E3
+        E3 <--> E1
+
+        E1 & E2 & E3 --> E4[User Interface]
+    end
+
+    subgraph "Query Flow"
+        F1[User Question] --> F2[Query Understanding]
+        F2 --> F3[Retrieval]
+        F3 --> F4[Answer Generation]
+        F4 --> F5[Map Rendering]
+        F5 --> F6[Response to User]
+    end
+
+    subgraph "Deployment Options"
+        G1{Deployment Type?}
+        G1 -->|Cloud| G2[AWS/Azure/GCP]
+        G1 -->|On-Premises| G3[Local Server]
+        G1 -->|Hybrid| G4[Combined Solution]
+    end
+
+    %% Connections between subgraphs
+    E4 --> F1
+    F6 --> E4
+    A9 -.-> G1
+    B1 -.-> G1
+    D4 -.-> G1
+
+    classDef primary fill:#1565c0,stroke:#0d47a1,color:white
+    classDef secondary fill:#f57c00,stroke:#ef6c00,color:white
+    classDef tertiary fill:#43a047,stroke:#2e7d32,color:white
+    classDef quaternary fill:#6a1b9a,stroke:#4a148c,color:white
+    classDef flow fill:#546e7a,stroke:#37474f,color:white
+
+    class A1,A2,A8,A9 primary
+    class B1,B2,B3,B4 secondary
+    class C1,C2,C3 tertiary
+    class D1,D2,D3,D4 quaternary
+    class E1,E2,E3,E4 primary
+    class F1,F2,F3,F4,F5,F6 flow
+    class G1,G2,G3,G4 secondary
+    class A3,A4,A5,A6,A7 primary
+    class L1,L2,L3 primary
+    class M1 primary
+        </pre>
+    </div>
+
+    <!-- Chart 2: User Flow -->
+    <div class="chart-container">
+        <h2>2. User Flow</h2>
+        <p class="chart-description">
+            This diagram focuses on the user journeys through the system for different roles: Admins managing data uploads and configuration, End Users interacting with the system to ask questions and view insights/visualizations, and System Administrators performing maintenance, monitoring, and model updates.
+        </p>
+        <pre class="mermaid" id="mermaid-chart-2">
+flowchart TB
+    subgraph "Admin Data Management"
+        AD1[Admin Login] --> AD2[Document Upload Interface]
+        AD2 --> AD3{Document Type?}
+        AD3 -->|PDF| AD4[Process with PDF Parser]
+        AD3 -->|Image| AD5[Process with OCR]
+        AD3 -->|Excel/CSV| AD6[Process Tabular Data]
+        AD3 -->|Other| AD7[Process with Appropriate Tool]
+
+        AD4 & AD5 & AD6 & AD7 --> AD8[Data Extraction Results]
+        AD8 --> AD9{Validation OK?}
+        AD9 -->|No| AD10[Manual Correction]
+        AD10 --> AD8
+        AD9 -->|Yes| AD11[Add to Database]
+
+        AD12[Configure Live API Sources] --> AD13[IMD Weather API]
+        AD13 --> AD14[Real-time Data Pipeline]
+        AD14 --> AD11
+    end
+
+    subgraph "End User Experience"
+        EU1[User Login] --> EU2[Dashboard View]
+        EU2 --> EU3[Ask Question/Query]
+
+        EU3 --> EU4[Natural Language Processing]
+        EU4 --> EU5[Data Retrieval]
+        EU5 --> EU6[Response Generation]
+
+        EU6 --> EU7[Text Answer]
+        EU6 --> EU8[Map Visualization]
+        EU6 --> EU9[Data Insights]
+
+        EU7 & EU8 & EU9 --> EU10[User Reviews Answer]
+        EU10 --> EU11{Follow-up Question?}
+        EU11 -->|Yes| EU3
+        EU11 -->|No| EU12[End Session]
+
+        EU2 --> EU13[Browse Historical Data]
+        EU2 --> EU14[View Predictions]
+        EU2 --> EU15[Export Reports]
+    end
+
+    subgraph "System Administration"
+        SA1[System Admin Login] --> SA2[Monitoring Dashboard]
+        SA2 --> SA3[Usage Analytics]
+        SA2 --> SA4[System Performance]
+        SA2 --> SA5[Data Quality Metrics]
+
+        SA1 --> SA6[Model Management]
+        SA6 --> SA7[Update LLM]
+        SA6 --> SA8[Retrain Forecasting Models]
+
+        SA1 --> SA9[Access Control]
+        SA9 --> SA10[User Management]
+        SA9 --> SA11[Permission Settings]
+    end
+
+    %% Cross-subgraph connections
+    AD11 --> EU5
+    SA7 --> EU4
+    SA8 --> EU14
+
+    classDef admin fill:#2196f3,stroke:#1976d2,color:white
+    classDef user fill:#4caf50,stroke:#388e3c,color:white
+    classDef sysadmin fill:#ff9800,stroke:#f57c00,color:white
+    classDef process fill:#9c27b0,stroke:#7b1fa2,color:white
+    classDef decision fill:#f44336,stroke:#d32f2f,color:white
+
+    class AD1,AD2,AD8,AD11,AD12 admin
+    class EU1,EU2,EU3,EU7,EU8,EU9,EU10,EU12,EU13,EU14,EU15 user
+    class SA1,SA2,SA3,SA4,SA5,SA6,SA7,SA8,SA9,SA10,SA11 sysadmin
+    class AD4,AD5,AD6,AD7,AD10,AD13,AD14,EU4,EU5,EU6 process
+    class AD3,AD9,EU11 decision
+        </pre>
+    </div>
+
+    <!-- Chart 3: Data Flow -->
+    <div class="chart-container">
+        <h2>3. Data Flow</h2>
+        <p class="chart-description">
+            This diagram shows how data moves through the system: starting from various sources (historical documents, APIs, sensors, manual input), flowing through ingestion and processing stages (extraction, normalization, validation), residing in storage systems (primary DB, vector store, archives), being utilized by analytics and intelligence components (forecasting, embedding, RAG), and finally being presented to the user through various interfaces (chat, map, dashboard, reports).
+        </p>
+        <pre class="mermaid" id="mermaid-chart-3">
+flowchart LR
+    %% Data Sources
+    DSrc1([Historical Docs]) --> |Upload| DI1
+    DSrc2([Real-time APIs]) --> |Connect| DI2
+    DSrc3([IoT Sensors]) --> |Stream| DI3
+    DSrc4([Manual Input]) --> |Enter| DI4
+
+    subgraph "Data Ingestion"
+        DI1[Document Processing]
+        DI2[API Integration]
+        DI3[Sensor Data Pipeline]
+        DI4[Manual Data Entry]
+    end
+
+    subgraph "Data Processing"
+        DP1[OCR & Text Extraction]
+        DP2[Data Normalization]
+        DP3[Validation & Cleaning]
+        DP4[Schema Mapping]
+    end
+
+    subgraph "Data Storage"
+        DStore1[(Primary Database)]
+        DStore2[(Vector Store)]
+        DStore3[(Archive Storage)]
+        DStore4[(Geospatial DB)]
+    end
+
+    subgraph "Analytics & Intelligence"
+        AI1[Event Forecasting Models]
+        AI2[Embedding Generation]
+        AI3[Statistics & Aggregation]
+        AI4[Trend Analysis]
+    end
+
+    subgraph "Knowledge System"
+        KS1[RAG Pipeline]
+        KS2[LLM Integration]
+        KS3[Context Management]
+        KS4[Response Generation]
+        KS5[Citation Tracking]
+    end
+
+    subgraph "User Interface & Presentation"
+        UI1[Chat Interface]
+        UI2[Map Visualization]
+        UI3[Data Dashboard]
+        UI4[Report Generation]
+        UI5[Voice I/O]
+        UI6[Infographics]
+    end
+
+    %% Connections
+    DI1 --> DP1
+    DI2 & DI3 & DI4 --> DP2
+    DP1 --> DP2
+    DP2 --> DP3
+    DP3 --> DP4
+
+    DP4 --> DStore1
+    DP4 --> DStore4
+    DStore1 --> DStore2
+    DStore1 --> DStore3
+
+    DStore1 & DStore4 --> AI1
+    DStore1 & DStore4 --> AI3
+    DStore1 & DStore4 --> AI4
+    DStore1 --> AI2
+    AI2 --> DStore2
+
+    AI1 --> DStore1
+
+    DStore1 & DStore2 & DStore4 --> KS1
+    KS1 --> KS3
+    KS3 --> KS2
+    KS2 --> KS4
+    KS4 --> KS5
+
+    KS4 --> UI1
+    KS4 --> UI5
+    KS4 & AI3 & AI4 --> UI3
+    KS4 & DStore1 & DStore4 & AI1 --> UI2
+    AI3 & AI4 --> UI4
+    KS4 & AI3 & AI4 --> UI6
+
+
+    %% External Inputs
+    UQ([User Query]) --> UI1
+    UV([User Voice Input]) --> UI5
+    UM([Map Interaction]) --> UI2
+
+    %% Outputs
+    UI1 --> UR([Textual Response])
+    UI2 --> VR([Visual Output on Map])
+    UI3 --> DR([Data Insights])
+    UI4 --> RR([Exportable Reports])
+    UI5 --> UAudio([Audio Response])
+    UI6 --> InfoG([Generated Infographics])
+
+
+    classDef sources fill:#e1f5fe,stroke:#4fc3f7,color:#0277bd
+    classDef processing fill:#e8f5e9,stroke:#66bb6a,color:#2e7d32
+    classDef storage fill:#fff3e0,stroke:#ffb74d,color:#ef6c00
+    classDef analytics fill:#f3e5f5,stroke:#ab47bc,color:#6a1b9a
+    classDef interface fill:#e8eaf6,stroke:#7986cb,color:#303f9f
+    classDef external fill:#fafafa,stroke:#bdbdbd,color:#424242
+
+    class DSrc1,DSrc2,DSrc3,DSrc4 sources
+    class DI1,DI2,DI3,DI4,DP1,DP2,DP3,DP4 processing
+    class DStore1,DStore2,DStore3,DStore4 storage
+    class AI1,AI2,AI3,AI4,KS1,KS2,KS3,KS4,KS5 analytics
+    class UI1,UI2,UI3,UI4,UI5,UI6 interface
+    class UQ,UM,UR,VR,DR,RR,UV,UAudio,InfoG external
+        </pre>
+    </div>
+
+    <!-- Include Mermaid.js -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+    <!-- Include Panzoom library -->
+    <script src="https://unpkg.com/panzoom@9.4.0/dist/panzoom.min.js"></script>
+
+    <script>
+        // Tooltip Data (Node ID -> Description)
+        const tooltips = {
+            // Chart 1: Architecture
+            A1: "User interface for uploading various document types (PDF, images, spreadsheets, text, GIS data).",
+            A2: "System checks the type of uploaded document to route it to the correct processor.",
+            A3: "Parses text and structure from PDF documents.",
+            A4: "Optical Character Recognition (OCR) Engine (e.g., using Mistral/Gemini Vision) to extract text from images or scanned documents.",
+            A5: "Processes data from structured files like Excel (XLSX) or CSV.",
+            A6: "Extracts text content from Word documents or plain text files.",
+            A7: "Converts geospatial data formats (like Shapefiles) into a usable format for the system.",
+            A8: "Standardizes extracted data from various sources into a common internal format/schema.",
+            A9: "Performs quality assurance checks and validates data integrity before storage.",
+            L1: "External Indian Meteorological Department (IMD) API providing real-time or near-real-time weather data.",
+            L2: "Component responsible for connecting to and fetching data from the IMD API.",
+            L3: "Processes incoming real-time data streams for immediate use or storage.",
+            M1: "Interface for users to manually input or correct data points.",
+            B1: "Primary relational or NoSQL database storing structured, processed data, including current and historical records.",
+            B2: "Specialized database (e.g., Pinecone, Weaviate, Chroma) storing vector embeddings of text/data for semantic search and RAG.",
+            B3: "System mechanism for tracking changes to data over time, allowing rollback or historical analysis.",
+            B4: "Long-term storage for older or less frequently accessed data.",
+            C1: "Set of predictive models (statistical, ML) used for forecasting events like floods based on historical and real-time data.",
+            C2: "Component that runs the forecasting models to generate future predictions.",
+            C3: "Assigns a confidence score to each prediction, indicating reliability.",
+            D1: "Retrieval-Augmented Generation system. Retrieves relevant information from databases (B1, B2) to augment LLM context.",
+            D2: "Assembles the retrieved information and the user query into a coherent context for the LLM.",
+            D3: "Integration point with a Large Language Model (e.g., Claude, Gemini) for understanding queries and generating natural language responses.",
+            D4: "Generates the final user-facing response based on the LLM output and retrieved context. May include citations.",
+            E1: "Text-based chat interface allowing users to ask questions in natural language. May include Voice I/O support.",
+            E2: "Interactive map component for visualizing geospatial data, predictions, and affected areas. Supports overlays, timelines, animations.",
+            E3: "Dashboard displaying key metrics, trends, statistics, and system status. May include infographics.",
+            E4: "The overall Graphical User Interface (GUI) presented to the end-user, integrating chat, map, and dashboard.",
+            F1: "The initial question or query entered by the user.",
+            F2: "System component (often part of the LLM/NLU pipeline) that analyzes and understands the user's query intent.",
+            F3: "The process of searching and retrieving relevant data from the Primary (B1) and Vector (B2) databases based on the query.",
+            F4: "The process where the RAG system and LLM generate a coherent answer using retrieved data.",
+            F5: "If the response requires geospatial visualization, this step renders the relevant data onto the map (E2).",
+            F6: "The final composed response (text, map update, dashboard view) delivered back to the user via the UI (E4).",
+            G1: "Decision point for choosing the deployment environment.",
+            G2: "Deployment on cloud platforms like AWS, Azure, or Google Cloud Platform.",
+            G3: "Deployment on local servers managed by the organization.",
+            G4: "A hybrid approach combining cloud and on-premises resources.",
+
+            // Chart 2: User Flow
+            AD1: "Admin user logs into the system with administrative privileges.",
+            AD2: "Admin accesses the interface specifically designed for uploading new documents.",
+            AD3: "System prompts admin or automatically detects the type of document being uploaded.",
+            AD4: "PDF document is sent to the dedicated PDF parsing module.",
+            AD5: "Image/scanned document is processed by the OCR engine.",
+            AD6: "Excel or CSV file is processed by the tabular data handler.",
+            AD7: "Other supported document types (e.g., Word, Text, Shapefile) are sent to their respective processing tools.",
+            AD8: "Admin reviews the data extracted by the system from the uploaded document.",
+            AD9: "Admin checks if the extracted data is accurate and complete.",
+            AD10: "If validation fails, admin uses an interface to manually correct or supplement the extracted data.",
+            AD11: "Validated and corrected data is ingested and stored in the system's databases.",
+            AD12: "Admin configures connections to external live data sources like weather APIs.",
+            AD13: "Specific configuration for connecting to the IMD weather data feed.",
+            AD14: "The automated pipeline that continuously fetches, processes, and stores data from the configured live API.",
+            EU1: "Standard end-user logs into the system.",
+            EU2: "User is presented with the main dashboard showing summaries, alerts, and navigation options.",
+            EU3: "User interacts with the chat interface or a query box to ask a question.",
+            EU4: "The system uses Natural Language Processing (NLP), often via the LLM, to understand the user's question.",
+            EU5: "The system (potentially via RAG) retrieves relevant data from its storage based on the understood query.",
+            EU6: "The system synthesizes the retrieved data and generates a response (text, visualization instruction).",
+            EU7: "The generated answer is presented to the user as text in the chat interface.",
+            EU8: "The system generates or updates a map view to visualize the answer geospatially.",
+            EU9: "The system presents relevant data points, charts, or statistics on the dashboard.",
+            EU10: "The user examines the provided answer(s) in text, map, or dashboard format.",
+            EU11: "User decides if they need more information or want to refine their query.",
+            EU12: "User concludes their interaction session.",
+            EU13: "User navigates the interface to explore historical data records or trends.",
+            EU14: "User accesses the section displaying current or historical forecasts generated by the system.",
+            EU15: "User generates and exports data summaries or analyses as reports (e.g., PDF, CSV).",
+            SA1: "System Administrator logs in with high-level privileges.",
+            SA2: "Admin views the central dashboard for monitoring system health and usage.",
+            SA3: "Admin reviews analytics on how the system is being used (e.g., popular queries, user activity).",
+            SA4: "Admin monitors server load, database performance, API response times, etc.",
+            SA5: "Admin checks metrics related to the quality, completeness, and consistency of the data within the system.",
+            SA6: "Admin accesses tools for managing the AI and forecasting models.",
+            SA7: "Admin updates the underlying Large Language Model (LLM) to a newer version or fine-tunes it.",
+            SA8: "Admin triggers retraining processes for the event forecasting models using new data.",
+            SA9: "Admin manages user access and security settings.",
+            SA10: "Admin adds, removes, or modifies user accounts and roles.",
+            SA11: "Admin configures permissions associated with different user roles (e.g., what data they can see or modify).",
+
+            // Chart 3: Data Flow
+            DSrc1: "Source: Historical documents like reports, case studies, surveys (PDF, DOCX, scanned images).",
+            DSrc2: "Source: Real-time data feeds from APIs (e.g., IMD weather, river levels).",
+            DSrc3: "Source: Data streams from Internet of Things (IoT) sensors deployed in the field (e.g., water level sensors, rain gauges).",
+            DSrc4: "Source: Data entered directly by users or administrators through input forms.",
+            DI1: "Ingestion step: Processing uploaded documents using appropriate parsers/extractors.",
+            DI2: "Ingestion step: Connecting to and consuming data from external APIs.",
+            DI3: "Ingestion step: Receiving and processing data from IoT sensor networks.",
+            DI4: "Ingestion step: Handling data submitted through manual entry forms.",
+            DP1: "Processing step: Extracting text from images/scans (OCR) and structured/unstructured text from documents.",
+            DP2: "Processing step: Transforming data from various sources into a standardized schema and format.",
+            DP3: "Processing step: Verifying data accuracy, handling missing values, removing duplicates, ensuring quality.",
+            DP4: "Processing step: Mapping the cleaned, normalized data to the final database schema.",
+            DStore1: "Storage: The main database (SQL or NoSQL) holding structured operational and historical data.",
+            DStore2: "Storage: Vector database optimized for storing and querying high-dimensional embeddings (for semantic search).",
+            DStore3: "Storage: Long-term, cost-effective storage for archived data (e.g., AWS S3 Glacier, Azure Archive Storage).",
+            DStore4: "Storage: Database or component optimized for storing and querying geospatial data (points, lines, polygons) (e.g., PostGIS).",
+            AI1: "Analytics: Models predicting future events (e.g., flood probability, landslide risk) based on input data.",
+            AI2: "Analytics: Process of converting text or other data into numerical vectors (embeddings) for semantic understanding and search.",
+            AI3: "Analytics: Calculating summary statistics, aggregating data over time or regions.",
+            AI4: "Analytics: Identifying patterns, trends, and anomalies in the data over time.",
+            KS1: "Knowledge System: The Retrieval-Augmented Generation pipeline combining data retrieval with LLM generation.",
+            KS2: "Knowledge System: Integration with the core Large Language Model (e.g., Claude, Gemini) for NLU and NLG.",
+            KS3: "Knowledge System: Managing the context window for the LLM, including retrieved data and conversation history.",
+            KS4: "Knowledge System: Generating the final response based on LLM output, retrieved data, and potentially analytical results.",
+            KS5: "Knowledge System: Tracking the sources of information used in the generated response to provide citations and ensure provenance.",
+            UI1: "Interface: Text-based chat for user queries and system responses.",
+            UI2: "Interface: Interactive map displaying geographical data, overlays, predictions.",
+            UI3: "Interface: Dashboard presenting key performance indicators, charts, and data summaries.",
+            UI4: "Interface: Functionality to generate and export reports in various formats.",
+            UI5: "Interface: Capability for users to interact using voice commands and receive spoken responses.",
+            UI6: "Interface: System generates visual summaries like infographics based on data or query results.",
+            UQ: "External Input: User's question typed into the chat interface.",
+            UV: "External Input: User's question spoken via microphone.",
+            UM: "External Input: User interaction with the map (clicking, zooming, selecting areas).",
+            UR: "Output: The system's answer presented as text.",
+            VR: "Output: Visual data rendered on the map interface.",
+            DR: "Output: Insights, charts, and statistics shown on the dashboard.",
+            RR: "Output: Reports generated and made available for download.",
+            UAudio: "Output: The system's answer delivered as synthesized speech.",
+            InfoG: "Output: Automatically generated infographics summarizing information."
+        };
+
+        // Initialize Mermaid
+        mermaid.initialize({ startOnLoad: true });
+
+        // Wait for SVGs to render, then attach interactivity
+        // Using MutationObserver is robust, but setTimeout is simpler for this case
+        setTimeout(() => {
+            const mermaidContainers = document.querySelectorAll('.mermaid');
+            const tooltipElement = document.getElementById('tooltip');
+
+            mermaidContainers.forEach(container => {
+                const svgElement = container.querySelector('svg');
+                if (!svgElement) return; // Skip if SVG not found
+
+                // Initialize Panzoom
+                const pzInstance = panzoom(svgElement, {
+                    maxZoom: 5,
+                    minZoom: 0.5,
+                    bounds: true,
+                    boundsPadding: 0.1
+                });
+
+                // Add grab/grabbing cursor style
+                svgElement.addEventListener('mousedown', () => { svgElement.style.cursor = 'grabbing'; });
+                svgElement.addEventListener('mouseup', () => { svgElement.style.cursor = 'grab'; });
+                svgElement.addEventListener('mouseleave', () => { svgElement.style.cursor = 'grab'; });
+
+
+                // Add Tooltip Listeners to Nodes
+                const nodes = svgElement.querySelectorAll('.node');
+                nodes.forEach(node => {
+                    node.addEventListener('mouseover', (event) => {
+                        const nodeId = node.id;
+                        // Extract base ID if Mermaid added prefixes/suffixes
+                        const baseId = nodeId.split('-')[1] || nodeId; // Basic attempt to get original ID
+                        
+                        const tooltipText = tooltips[baseId];
+
+                        if (tooltipText) {
+                            tooltipElement.innerHTML = tooltipText;
+                            tooltipElement.style.display = 'block';
+                            
+                            // Position tooltip near mouse, accounting for scroll and container offset
+                            const rect = container.getBoundingClientRect(); // Get container position
+                            const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+                            const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+                            // Calculate position relative to the page
+                            let left = event.pageX + 15;
+                            let top = event.pageY + 15;
+
+                            tooltipElement.style.left = `${left}px`;
+                            tooltipElement.style.top = `${top}px`;
+
+                            // Adjust if tooltip goes off-screen right
+                            if (left + tooltipElement.offsetWidth > window.innerWidth + scrollX) {
+                                tooltipElement.style.left = `${event.pageX - tooltipElement.offsetWidth - 15}px`;
+                            }
+                            // Adjust if tooltip goes off-screen bottom
+                            if (top + tooltipElement.offsetHeight > window.innerHeight + scrollY) {
+                                tooltipElement.style.top = `${event.pageY - tooltipElement.offsetHeight - 15}px`;
+                            }
+
+
+                        } else {
+                            // Optional: Show default text if no specific tooltip found
+                            // tooltipElement.innerHTML = `Node ID: ${baseId}`;
+                            // tooltipElement.style.display = 'block';
+                            console.log("No tooltip found for node ID:", baseId, "(Original ID:", nodeId, ")");
+                        }
+                    });
+
+                    node.addEventListener('mousemove', (event) => {
+                         // Update position as mouse moves
+                        let left = event.pageX + 15;
+                        let top = event.pageY + 15;
+                        
+                        tooltipElement.style.left = `${left}px`;
+                        tooltipElement.style.top = `${top}px`;
+
+                        // Adjust if tooltip goes off-screen right
+                        if (left + tooltipElement.offsetWidth > window.innerWidth + (window.pageXOffset || document.documentElement.scrollLeft)) {
+                            tooltipElement.style.left = `${event.pageX - tooltipElement.offsetWidth - 15}px`;
+                        }
+                        // Adjust if tooltip goes off-screen bottom
+                        if (top + tooltipElement.offsetHeight > window.innerHeight + (window.pageYOffset || document.documentElement.scrollTop)) {
+                            tooltipElement.style.top = `${event.pageY - tooltipElement.offsetHeight - 15}px`;
+                        }
+                    });
+
+                    node.addEventListener('mouseout', () => {
+                        tooltipElement.style.display = 'none';
+                    });
+                });
+            });
+        }, 1000); // Adjust delay if charts render slower/faster
+
+    </script>
+
+</body>
+</html>
